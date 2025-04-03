@@ -1,14 +1,19 @@
 const puppeteer = require('puppeteer');
 
 const fetchUserInfo = async (username, password) => {
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
-
+  let browser;
   try {
+    browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
+    // Xóa cookie trước khi bắt đầu
+    await page.deleteCookie(...(await page.cookies()));
+
     // Điều hướng đến trang đăng nhập
     console.log('Đang điều hướng đến trang đăng nhập...');
     await page.goto('https://cas.hou.edu.vn/cas/login?service=https://sinhvien.hou.edu.vn/login.aspx', {
       waitUntil: 'networkidle2',
+      timeout: 60000,
     });
 
     // Nhập thông tin đăng nhập
@@ -32,12 +37,13 @@ const fetchUserInfo = async (username, password) => {
 
     // Đợi điều hướng sau khi đăng nhập
     console.log('Đang đợi điều hướng sau khi đăng nhập...');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 });
 
     // Điều hướng đến trang hồ sơ sinh viên
     console.log('Đang điều hướng đến trang hồ sơ sinh viên...');
     await page.goto('https://sinhvien.hou.edu.vn/wfrmHoSoSinhVien.aspx', {
       waitUntil: 'networkidle2',
+      timeout: 60000,
     });
 
     // Cào dữ liệu từ trang hồ sơ sinh viên
@@ -64,7 +70,9 @@ const fetchUserInfo = async (username, password) => {
     console.error('Lỗi khi cào dữ liệu hồ sơ sinh viên:', error);
     throw new Error('Không thể cào dữ liệu hồ sơ sinh viên');
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   }
 };
 
